@@ -49,7 +49,7 @@ def process_email(messages: list):
         else:
             processed_data.append(message)
     mark_flow_status(processed_data)
-    upload_data(messages)
+    upload_data(message_data)
 
 
 def mark_flow_status(messages: list):
