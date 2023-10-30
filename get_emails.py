@@ -1,35 +1,42 @@
 """Fetch Emails from mech_shippingbot"""
-import setup # pylint: disable=unused-import, wrong-import-order
+import setup  # pylint: disable=unused-import, wrong-import-order
 from typing import Optional
 from imap_tools import MailBox, AND
+import requests
 import mysql.connector
+import pymysql
 from params import Params
 from pitney_ship import scrape_pitneyship
+from pirate_ship import scrape_pirateship
 
 
 def parse_data(message: dict) -> dict:
     """Parse message data into dict"""
     parsed_data = {}
-    if message.from_ == 'no-reply@sendpro360.pitneybowes.com':
-        parsed_data = scrape_pitneyship(message.html)
+    if message.from_ == "no-reply@sendpro360.pitneybowes.com":
         if message.subject == "[PitneyShip] Package Shipped":
-            parsed_data['status'] = "shipped"
-            parsed_data['flow_status'] = "processing"
+            parsed_data = scrape_pitneyship(message.html)
+            parsed_data["status"] = "shipped"
+            parsed_data["flow_status"] = "processing"
         elif message.subject == "[PitneyShip] Package Delivered":
-            parsed_data['status'] = "delivered"
-            parsed_data['flow_status'] = "rejected"
+            parsed_data["status"] = "delivered"
+            parsed_data["flow_status"] = "rejected"
         elif message.subject == "Shipment Delivered":
-            parsed_data['status'] = "delivered"
-            parsed_data['flow_status'] = "rejected"
+            parsed_data["status"] = "delivered"
+            parsed_data["flow_status"] = "rejected"
         else:
-            parsed_data['status'] = "unknown"
-            parsed_data['flow_status'] = "rejected"
+            parsed_data["status"] = "unknown"
+            parsed_data["flow_status"] = "rejected"
+    elif message.from_ == "helpdesk@kumpeapps.com":
+        parsed_data = scrape_pirateship(message.html)
+        parsed_data["status"] = "shipped"
+        parsed_data["flow_status"] = "processing"
     else:
-        parsed_data['flow_status'] = "rejected"
-    parsed_data['uid'] = message.uid
-    parsed_data['from'] = message.from_
-    parsed_data['to'] = message.to
-    parsed_data['subject'] = message.subject
+        parsed_data["flow_status"] = "rejected"
+    parsed_data["uid"] = message.uid
+    parsed_data["from"] = message.from_
+    parsed_data["to"] = message.to
+    parsed_data["subject"] = message.subject
     return parsed_data
 
 
@@ -38,13 +45,19 @@ def process_email(messages: list):
     message_data = []
     processed_data = []
     for message in messages:
-        if message['flow_status'] == 'processing':
-            order_id = get_order_number(message)
-            message['order_id'] = order_id
-            if message['order_id'] is not None:
+        if message["flow_status"] == "processing" and message["system"] == "Kumpe3D":
+            if message["order_id"] is not None:
                 message_data.append(message)
             else:
-                message['flow_status'] = 'processed'
+                message["flow_status"] = "rejected"
+                processed_data.append(message)
+        elif message["flow_status"] == "processing" and message["system"] == "ACC":
+            order_id = get_order_number(message)
+            message["order_id"] = order_id
+            if message["order_id"] is not None:
+                message_data.append(message)
+            else:
+                message["flow_status"] = "processed"
                 processed_data.append(message)
         else:
             processed_data.append(message)
@@ -55,16 +68,16 @@ def process_email(messages: list):
 def mark_flow_status(messages: list):
     """Mark email as processed or rejected"""
     creds = Params.Email.dict()
-    with MailBox(creds['server']).login(creds['email'], creds['password']) as mailbox:
+    with MailBox(creds["server"]).login(creds["email"], creds["password"]) as mailbox:
         for message in messages:
             if message is not None:
-                mailbox.flag(message['uid'], message['flow_status'], True)
+                mailbox.flag(message["uid"], message["flow_status"], True)
 
 
 def fetch_emails():
     """Fetch shippingbot emails"""
     creds = Params.Email.dict()
-    with MailBox(creds['server']).login(creds['email'], creds['password']) as mailbox:
+    with MailBox(creds["server"]).login(creds["email"], creds["password"]) as mailbox:
         messages = []
         for msg in mailbox.fetch(AND(no_keyword=["processed", "rejected"])):
             message = parse_data(msg)
@@ -78,14 +91,14 @@ def get_order_number(message: dict) -> Optional[int]:
         host=Params.SQL.server,
         user=Params.SQL.username,
         password=Params.SQL.password,
-        database=Params.SQL.database
+        database=Params.SQL.database,
     )
-    if message['status'] == 'shipped':
+    if message["status"] == "shipped":
         status_check = 2
-    elif message['status'] == 'delivered':
+    elif message["status"] == "delivered":
         status_check = 3
-    customer = message['customer']
-    address = message['street_address']
+    # customer = message['customer']
+    address = message["street_address"]
     cursor = mydb.cursor()
     sql = """SELECT
                 order_id
@@ -111,12 +124,11 @@ def upload_data(messages: list, initial_upload: bool = True):
         user=Params.SQL.username,
         password=Params.SQL.password,
         database=Params.SQL.database,
-        autocommit=False
-
+        autocommit=False,
     )
     for message in messages:
-        if message['flow_status'] == 'processing':
-            cursor = mydb.cursor(buffered= True)
+        if message["flow_status"] == "processing":
+            cursor = mydb.cursor(buffered=True)
             sql = """INSERT INTO `BOT_Data`.`shippingbot__trackingdata`
                     (`tracking_number`,
                     `street_address`,
@@ -124,28 +136,26 @@ def upload_data(messages: list, initial_upload: bool = True):
                     `order_system`,
                     `order_number`,
                     `shipping_status`,
-                    `expected_delivery`,
                     `customer_name`,
                     `bot_status`,
                     `email_from`,
                     `email_to`)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE shipping_status = %s, bot_status = %s, last_updated = now()"""
             values = (
-                message['tracking_id'],
-                message['street_address'],
-                message['courier'],
-                'ACC',
-                message['order_id'],
-                message['status'],
-                message['estimated_delivery'],
-                message['customer'],
-                message['flow_status'],
-                message['from'],
-                ''.join(message['to']),
-                message['status'],
-                message['flow_status']
-                )
+                message["tracking_id"],
+                message["street_address"],
+                message["courier"],
+                "ACC",
+                message["order_id"],
+                message["status"],
+                message["customer"],
+                message["flow_status"],
+                message["from"],
+                "".join(message["to"]),
+                message["status"],
+                message["flow_status"],
+            )
             cursor.execute(sql, values)
             message_data.append(message)
         else:
@@ -159,23 +169,32 @@ def upload_data(messages: list, initial_upload: bool = True):
 def mark_order_shipped(messages: list):
     """Mark Orders as Shipped"""
     message_data = []
+
+    for message in messages:
+        if message["system"] == "ACC":
+            message_data.append(process_acc(message))
+        elif message["system"] == "Kumpe3D":
+            message_data.append(process_k3d(message))
+    upload_data(message_data, False)
+    mark_flow_status(message_data)
+
+
+def process_acc(message):
+    """Process A Creative Collection Tracking"""
     mydb = mysql.connector.connect(
         host=Params.SQL.server,
         user=Params.SQL.username,
         password=Params.SQL.password,
         database=Params.SQL.database,
-        autocommit=False
-
+        autocommit=False,
     )
-
-    for message in messages:
-        if message['status'] == 'shipped':
-            status_id = 3
-        elif message['status'] == 'delivered':
-            status_id = 18
-        if message['flow_status'] == 'processing':
-            cursor = mydb.cursor(buffered= True)
-            sql = """INSERT INTO `Web_ACC_Shopping`.order_history
+    if message["status"] == "shipped":
+        status_id = 3
+    elif message["status"] == "delivered":
+        status_id = 18
+    if message["flow_status"] == "processing":
+        cursor = mydb.cursor(buffered=True)
+        sql = """INSERT INTO `Web_ACC_Shopping`.order_history
                     (
                     order_id
                     ,order_status_id
@@ -185,28 +204,112 @@ def mark_order_shipped(messages: list):
                     ,date_modified
                     )
             VALUES (%s, %s, 1, %s, now(), now())"""
-            values = (
-                message['order_id'],
-                status_id,
-                f"""Marked as {message['status']} by ShippingBot. {message['courier']}
-                Tracking ID: {message['tracking_id']}"""
-                )
-            cursor.execute(sql, values)
-            sql2 = f"""UPDATE `Web_ACC_Shopping`.orders
+        values = (
+            message["order_id"],
+            status_id,
+            f"""Marked as {message['status']} by ShippingBot. {message['courier']}
+                Tracking ID: {message['tracking_id']}""",
+        )
+        cursor.execute(sql, values)
+        sql2 = f"""UPDATE `Web_ACC_Shopping`.orders
                     SET
                         order_status_id = {status_id},
                         date_modified = now()
                     WHERE 1=1
                         AND order_id = {message['order_id']} """
-            cursor.execute(sql2)
-            message['flow_status'] = 'processed'
-            message_data.append(message)
-        else:
-            message_data.append(message)
-    mydb.commit()
-    mydb.close()
-    upload_data(message_data, False)
-    mark_flow_status(message_data)
+        cursor.execute(sql2)
+        message["flow_status"] = "processed"
+        mydb.commit()
+        mydb.close()
+        return message
+    else:
+        return message
+
+
+def process_k3d(message):
+    """Process Kumpe3D Tracking"""
+    sql_params = Params.SQL
+    db = pymysql.connect(
+        db="Web_3dprints",
+        user=sql_params.username,
+        passwd=sql_params.password,
+        host=sql_params.server,
+        port=3306,
+    )
+    cursor = db.cursor(pymysql.cursors.DictCursor)
+    if message["flow_status"] == "processing":
+        order_id = message["order_id"]
+        tracking_id = message["tracking_id"]
+        courier = message["courier"]
+        sql = "UPDATE `Web_3dprints`.`orders` SET `status_id` = 14 WHERE idorders = %s"
+        cursor.execute(sql, (order_id))
+        sql = """INSERT INTO `Web_3dprints`.`orders__history`
+                    (`idorders`,
+                    `status_id`,
+                    `notes`,
+                    `updated_by`)
+                VALUES
+                    (%s, 14, "Order shipped", "ShippingBot");"""
+        cursor.execute(sql, (order_id))
+        sql = """INSERT INTO `Web_3dprints`.`orders__tracking`
+                    (`idorders`,
+                    `courier`,
+                    `tracking_number`,
+                    `tracking_status`)
+                VALUES
+                    (%s, %s, %s, "Shipped");"""
+        cursor.execute(sql, (order_id, courier, tracking_id))
+        db.commit()
+        sql = """SELECT * FROM `Web_3dprints`.`orders` WHERE idorders = %s"""
+        cursor.execute(sql, (order_id))
+        order = cursor.fetchone()
+        transaction_id = order['paypal_capture_id']
+        db.close()
+        auth = authenticate()
+        token = auth["access_token"]
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+        }
+        
+        if transaction_id is not None:
+            data = (
+                '{ "trackers": [ { "transaction_id": "'
+                + transaction_id
+                + '", "tracking_number": "'
+                + tracking_id
+                + '", "status": "SHIPPED", "carrier": "'
+                + message['courier']
+                + '", "shipment_direction": "FORWARD" }] }'
+            )
+
+            response = requests.post(
+                "https://api-m.paypal.com/v1/shipping/trackers-batch",
+                headers=headers,
+                data=data,
+                timeout=30,
+            )
+        message["flow_status"] = "processed"
+        return message
+    else:
+        message["flow_status"] = "processed"
+        return message
+
+
+def authenticate() -> dict:
+    """Authenticate to Get Bearer Token"""
+    data = {
+        "grant_type": "client_credentials",
+    }
+
+    response = requests.post(
+        "https://api-m.paypal.com/v1/oauth2/token",
+        data=data,
+        auth=(Params.PayPal.client_id, Params.PayPal.secret),
+        timeout=30,
+    )
+    return response.json()
+
 
 if __name__ == "__main__":
     fetch_emails()

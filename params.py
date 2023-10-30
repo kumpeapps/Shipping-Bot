@@ -1,4 +1,4 @@
-"""Parameters file for HAC"""
+"""Parameters file for Shipping Bot"""
 import setup # pylint: disable=unused-import, wrong-import-order
 import os
 from dotenv import load_dotenv
@@ -11,9 +11,9 @@ app_env = os.getenv('APP_ENV')
 creds = infisical.InfisicalClient(token=service_token, site_url='https://creds.kumpeapps.com')
 
 class Params:
-    """HAC Parameters"""
+    """Shipping Bot Parameters"""
     class SQL:
-        """SQL Parameters for HAC mech User"""
+        """SQL Parameters for Shipping Bot"""
         username = creds.get_secret("USERNAME", environment=app_env, path="/MYSQL/").secret_value
         password = creds.get_secret("PASSWORD", environment=app_env, path="/MYSQL/").secret_value
         server = creds.get_secret("SERVER", environment=app_env, path="/MYSQL/").secret_value
@@ -52,6 +52,11 @@ class Params:
                 'server': Params.Email.server,
                 'port': Params.Email.port
             }
+    
+    class PayPal:
+        """PayPal Parameters"""
+        client_id = creds.get_secret("CLIENT_ID", environment=app_env, path="/PAYPAL/").secret_value
+        secret = creds.get_secret("SECRET", environment=app_env, path="/PAYPAL/").secret_value
 
 
 if __name__ == "__main__":
