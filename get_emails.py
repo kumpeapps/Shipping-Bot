@@ -27,8 +27,8 @@ def parse_data(message: dict) -> dict:
         else:
             parsed_data["status"] = "unknown"
             parsed_data["flow_status"] = "rejected"
-    elif message.from_ == "helpdesk@kumpeapps.com":
-        parsed_data = scrape_pirateship(message.html)
+    elif message.from_ in ("helpdesk@kumpeapps.com", "sales@kumpe3d.com"):
+        parsed_data = scrape_pirateship(message.html, "Kumpe3D")
         parsed_data["status"] = "shipped"
         parsed_data["flow_status"] = "processing"
     else:
