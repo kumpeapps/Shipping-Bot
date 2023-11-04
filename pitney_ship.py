@@ -19,5 +19,6 @@ def scrape_pitneyship(file):
         "estimated_delivery": estimated_delivery,
         "courier": courier,
         "customer": customer,
-        "street_address": street_address
+        "street_address": street_address,
+        "system": "ACC"
         }
