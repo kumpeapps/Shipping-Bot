@@ -272,7 +272,7 @@ def process_k3d(message):
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {token}",
             }
-            
+
             if transaction_id is not None:
                 data = (
                     '{ "trackers": [ { "transaction_id": "'
