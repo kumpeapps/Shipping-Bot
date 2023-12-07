@@ -292,7 +292,7 @@ def process_k3d(message):
                 )
         finally:
             message["flow_status"] = "processed"
-        return message
+            return message
     else:
         message["flow_status"] = "processed"
         return message
