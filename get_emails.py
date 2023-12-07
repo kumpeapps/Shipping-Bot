@@ -238,59 +238,61 @@ def process_k3d(message):
     )
     cursor = db.cursor(pymysql.cursors.DictCursor)
     if message["flow_status"] == "processing":
-        order_id = message["order_id"]
-        tracking_id = message["tracking_id"]
-        courier = message["courier"]
-        sql = "UPDATE `Web_3dprints`.`orders` SET `status_id` = 14 WHERE idorders = %s"
-        cursor.execute(sql, (order_id))
-        sql = """INSERT INTO `Web_3dprints`.`orders__history`
-                    (`idorders`,
-                    `status_id`,
-                    `notes`,
-                    `updated_by`)
-                VALUES
-                    (%s, 14, "Order shipped", "ShippingBot");"""
-        cursor.execute(sql, (order_id))
-        sql = """INSERT INTO `Web_3dprints`.`orders__tracking`
-                    (`idorders`,
-                    `courier`,
-                    `tracking_number`,
-                    `tracking_status`)
-                VALUES
-                    (%s, %s, %s, "Shipped");"""
-        cursor.execute(sql, (order_id, courier, tracking_id))
-        db.commit()
-        sql = """SELECT * FROM `Web_3dprints`.`orders` WHERE idorders = %s"""
-        cursor.execute(sql, (order_id))
-        order = cursor.fetchone()
-        transaction_id = order['paypal_capture_id']
-        db.close()
-        auth = authenticate()
-        token = auth["access_token"]
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-        }
-        
-        if transaction_id is not None:
-            data = (
-                '{ "trackers": [ { "transaction_id": "'
-                + transaction_id
-                + '", "tracking_number": "'
-                + tracking_id
-                + '", "status": "SHIPPED", "carrier": "'
-                + message['courier']
-                + '", "shipment_direction": "FORWARD" }] }'
-            )
+        try:
+            order_id = message["order_id"]
+            tracking_id = message["tracking_id"]
+            courier = message["courier"]
+            sql = "UPDATE `Web_3dprints`.`orders` SET `status_id` = 14 WHERE idorders = %s"
+            cursor.execute(sql, (order_id))
+            sql = """INSERT INTO `Web_3dprints`.`orders__history`
+                        (`idorders`,
+                        `status_id`,
+                        `notes`,
+                        `updated_by`)
+                    VALUES
+                        (%s, 14, "Order shipped", "ShippingBot");"""
+            cursor.execute(sql, (order_id))
+            sql = """INSERT INTO `Web_3dprints`.`orders__tracking`
+                        (`idorders`,
+                        `courier`,
+                        `tracking_number`,
+                        `tracking_status`)
+                    VALUES
+                        (%s, %s, %s, "Shipped");"""
+            cursor.execute(sql, (order_id, courier, tracking_id))
+            db.commit()
+            sql = """SELECT * FROM `Web_3dprints`.`orders` WHERE idorders = %s"""
+            cursor.execute(sql, (order_id))
+            order = cursor.fetchone()
+            transaction_id = order['paypal_capture_id']
+            db.close()
+            auth = authenticate()
+            token = auth["access_token"]
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}",
+            }
 
-            response = requests.post(
-                "https://api-m.paypal.com/v1/shipping/trackers-batch",
-                headers=headers,
-                data=data,
-                timeout=30,
-            )
-        message["flow_status"] = "processed"
-        return message
+            if transaction_id is not None:
+                data = (
+                    '{ "trackers": [ { "transaction_id": "'
+                    + transaction_id
+                    + '", "tracking_number": "'
+                    + tracking_id
+                    + '", "status": "SHIPPED", "carrier": "'
+                    + message['courier']
+                    + '", "shipment_direction": "FORWARD" }] }'
+                )
+
+                requests.post(
+                    "https://api-m.paypal.com/v1/shipping/trackers-batch",
+                    headers=headers,
+                    data=data,
+                    timeout=30,
+                )
+        finally:
+            message["flow_status"] = "processed"
+            return message
     else:
         message["flow_status"] = "processed"
         return message
