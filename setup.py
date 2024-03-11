@@ -14,7 +14,7 @@ def import_or_install(module, package=None):
 
 
 import_or_install("bs4", "beautifulsoup4")
-import_or_install("imap-tools")
+import_or_install("imap_tools", "imap-tools")
 import_or_install("mysql.connector")
 import_or_install("pymysql")
 import_or_install("requests")
