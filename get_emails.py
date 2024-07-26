@@ -242,16 +242,27 @@ def process_k3d(message):
             order_id = message["order_id"]
             tracking_id = message["tracking_id"]
             courier = message["courier"]
-            sql = "UPDATE `Web_3dprints`.`orders` SET `status_id` = 14 WHERE idorders = %s"
+            sql = """SELECT * FROM `Web_3dprints`.`orders` WHERE idorders = %s"""
             cursor.execute(sql, (order_id))
+            order = cursor.fetchone()
+            current_status = order['status_id']
+            transaction_id = order['paypal_capture_id']
+            db.close()
+            new_status = 14
+            if current_status == 11:
+                new_status = 12
+            sql = "UPDATE `Web_3dprints`.`orders` SET `status_id` = 14 WHERE idorders = %s"
+            sql2 = "UPDATE `Web_3dprints`.`orders__shipments` SET `shipped` = 1 WHERE idorders = %s"
+            cursor.execute(sql, (order_id))
+            cursor.execute(sql2, (order_id))
             sql = """INSERT INTO `Web_3dprints`.`orders__history`
                         (`idorders`,
                         `status_id`,
                         `notes`,
                         `updated_by`)
                     VALUES
-                        (%s, 14, "Order shipped", "ShippingBot");"""
-            cursor.execute(sql, (order_id))
+                        (%s, %s, "Order shipped", "ShippingBot");"""
+            cursor.execute(sql, (order_id, new_status))
             sql = """INSERT INTO `Web_3dprints`.`orders__tracking`
                         (`idorders`,
                         `courier`,
@@ -261,11 +272,6 @@ def process_k3d(message):
                         (%s, %s, %s, "Shipped");"""
             cursor.execute(sql, (order_id, courier, tracking_id))
             db.commit()
-            sql = """SELECT * FROM `Web_3dprints`.`orders` WHERE idorders = %s"""
-            cursor.execute(sql, (order_id))
-            order = cursor.fetchone()
-            transaction_id = order['paypal_capture_id']
-            db.close()
             auth = authenticate()
             token = auth["access_token"]
             headers = {
