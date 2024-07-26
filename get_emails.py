@@ -228,6 +228,7 @@ def process_acc(message):
 
 def process_k3d(message):
     """Process Kumpe3D Tracking"""
+    print("process_k3d")
     sql_params = Params.SQL
     db = pymysql.connect(
         db="Web_3dprints",
@@ -247,13 +248,12 @@ def process_k3d(message):
             order = cursor.fetchone()
             current_status = order['status_id']
             transaction_id = order['paypal_capture_id']
-            db.close()
             new_status = 14
             if current_status == 11:
                 new_status = 12
-            sql = "UPDATE `Web_3dprints`.`orders` SET `status_id` = 14 WHERE idorders = %s"
+            sql = "UPDATE `Web_3dprints`.`orders` SET `status_id` = %s WHERE idorders = %s"
             sql2 = "UPDATE `Web_3dprints`.`orders__shipments` SET `shipped` = 1 WHERE idorders = %s"
-            cursor.execute(sql, (order_id))
+            cursor.execute(sql, (new_status, order_id))
             cursor.execute(sql2, (order_id))
             sql = """INSERT INTO `Web_3dprints`.`orders__history`
                         (`idorders`,
@@ -272,6 +272,7 @@ def process_k3d(message):
                         (%s, %s, %s, "Shipped");"""
             cursor.execute(sql, (order_id, courier, tracking_id))
             db.commit()
+            db.close()
             auth = authenticate()
             token = auth["access_token"]
             headers = {
