@@ -14,11 +14,11 @@ def parse_data(message: dict) -> dict:
     """Parse message data into dict"""
     parsed_data = {}
     if message.from_ == "no-reply@sendpro360.pitneybowes.com" or message.from_ == "no-reply@pb.com":
-        if message.subject == "[PitneyShip] Package Shipped":
+        if message.subject == "[PitneyShip] Package Shipped" or message.subject == "A shipment from Angela Kumpe is on its way":
             parsed_data = scrape_pitneyship(message.html)
             parsed_data["status"] = "shipped"
             parsed_data["flow_status"] = "processing"
-        elif message.subject == "[PitneyShip] Package Delivered":
+        elif message.subject == "[PitneyShip] Package Delivered" or message.subject == "Shipment Delivered":
             parsed_data["status"] = "delivered"
             parsed_data["flow_status"] = "rejected"
         elif message.subject == "Shipment Delivered":
