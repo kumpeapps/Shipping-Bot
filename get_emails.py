@@ -249,7 +249,7 @@ def process_k3d(message):
             current_status = order['status_id']
             transaction_id = order['paypal_capture_id']
             new_status = 14
-            if current_status == 11:
+            if current_status == 11 or current_status == 12:
                 new_status = 12
             sql = "UPDATE `Web_3dprints`.`orders` SET `status_id` = %s WHERE idorders = %s"
             sql2 = "UPDATE `Web_3dprints`.`orders__shipments` SET `shipped` = 1 WHERE idorders = %s"
