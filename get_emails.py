@@ -1,4 +1,5 @@
 """Fetch Emails from mech_shippingbot"""
+
 import setup  # pylint: disable=unused-import, wrong-import-order
 from typing import Optional
 from imap_tools import MailBox, AND
@@ -13,12 +14,21 @@ from pirate_ship import scrape_pirateship
 def parse_data(message: dict) -> dict:
     """Parse message data into dict"""
     parsed_data = {}
-    if message.from_ == "no-reply@sendpro360.pitneybowes.com" or message.from_ == "no-reply@pb.com":
-        if message.subject == "[PitneyShip] Package Shipped" or message.subject == "A shipment from Angela Kumpe is on its way":
-            parsed_data = scrape_pitneyship(message.html)
+    if (
+        message.from_ == "no-reply@sendpro360.pitneybowes.com"
+        or message.from_ == "no-reply@pb.com"
+    ):
+        if (
+            message.subject == "[PitneyShip] Package Shipped"
+            or message.subject == "A shipment from Angela Kumpe is on its way"
+        ):
+            # parsed_data = scrape_pitneyship(message.html)
             parsed_data["status"] = "shipped"
             parsed_data["flow_status"] = "processing"
-        elif message.subject == "[PitneyShip] Package Delivered" or message.subject == "Shipment Delivered":
+        elif (
+            message.subject == "[PitneyShip] Package Delivered"
+            or message.subject == "Shipment Delivered"
+        ):
             parsed_data["status"] = "delivered"
             parsed_data["flow_status"] = "rejected"
         elif message.subject == "Shipment Delivered":
@@ -246,8 +256,8 @@ def process_k3d(message):
             sql = """SELECT * FROM `Web_3dprints`.`orders` WHERE idorders = %s"""
             cursor.execute(sql, (order_id))
             order = cursor.fetchone()
-            current_status = order['status_id']
-            transaction_id = order['paypal_capture_id']
+            current_status = order["status_id"]
+            transaction_id = order["paypal_capture_id"]
             new_status = 14
             if current_status == 11 or current_status == 12:
                 new_status = 12
@@ -288,7 +298,7 @@ def process_k3d(message):
                     + '", "tracking_number": "'
                     + tracking_id
                     + '", "status": "SHIPPED", "carrier": "'
-                    + message['courier']
+                    + message["courier"]
                     + '", "shipment_direction": "FORWARD" }] }'
                 )
 
