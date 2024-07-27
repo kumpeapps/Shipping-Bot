@@ -22,7 +22,7 @@ def parse_data(message: dict) -> dict:
             message.subject == "[PitneyShip] Package Shipped"
             or message.subject == "A shipment from Angela Kumpe is on its way"
         ):
-            # parsed_data = scrape_pitneyship(message.html)
+            parsed_data = scrape_pitneyship(message.html)
             parsed_data["status"] = "shipped"
             parsed_data["flow_status"] = "processing"
         elif (
@@ -62,13 +62,15 @@ def process_email(messages: list):
                 message["flow_status"] = "rejected"
                 processed_data.append(message)
         elif message["flow_status"] == "processing" and message["system"] == "ACC":
-            order_id = get_order_number(message)
-            message["order_id"] = order_id
-            if message["order_id"] is not None:
-                message_data.append(message)
-            else:
-                message["flow_status"] = "processed"
-                processed_data.append(message)
+            message["flow_status"] = "processing"
+            processed_data.append(message)
+            # order_id = get_order_number(message)
+            # message["order_id"] = order_id
+            # if message["order_id"] is not None:
+            #     message_data.append(message)
+            # else:
+            #     message["flow_status"] = "processed"
+            #     processed_data.append(message)
         else:
             processed_data.append(message)
     mark_flow_status(processed_data)
