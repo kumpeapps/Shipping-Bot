@@ -13,7 +13,7 @@ from pirate_ship import scrape_pirateship
 def parse_data(message: dict) -> dict:
     """Parse message data into dict"""
     parsed_data = {}
-    if message.from_ == "no-reply@sendpro360.pitneybowes.com":
+    if message.from_ == "no-reply@sendpro360.pitneybowes.com" or message.from_ == "no-reply@pb.com":
         if message.subject == "[PitneyShip] Package Shipped":
             parsed_data = scrape_pitneyship(message.html)
             parsed_data["status"] = "shipped"
