@@ -254,6 +254,7 @@ def process_k3d(message):
             sql = "UPDATE `Web_3dprints`.`orders` SET `status_id` = %s WHERE idorders = %s"
             sql2 = "UPDATE `Web_3dprints`.`orders__shipments` SET `shipped` = 1 WHERE idorders = %s"
             cursor.execute(sql, (new_status, order_id))
+            db.commit()
             cursor.execute(sql2, (order_id))
             sql = """INSERT INTO `Web_3dprints`.`orders__history`
                         (`idorders`,
