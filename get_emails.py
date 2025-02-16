@@ -4,6 +4,7 @@ import setup  # pylint: disable=unused-import, wrong-import-order
 from typing import Optional
 from imap_tools import MailBox, AND
 import requests
+from loguru import logger
 import mysql.connector
 import pymysql
 from params import Params
@@ -331,4 +332,5 @@ def authenticate() -> dict:
 
 
 if __name__ == "__main__":
+    logger.info("Initializing Shipping Bot")
     fetch_emails()
