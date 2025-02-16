@@ -2,7 +2,7 @@ name: Push Docker Image to Docker Hub (Latest)
 
 on:
   push:
-    branches: main
+    branches: master
 
 jobs:
   deploy:
