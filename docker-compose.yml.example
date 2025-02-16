@@ -1,0 +1,16 @@
+services:
+  shipping_bot:
+    image: "justinkumpe/shipping_bot:latest-beta"
+    environment:
+      - EMAIL=
+      - FROM_EMAIL=
+      - EMAIL_PASSWORD=
+      - EMAIL_PORT=
+      - EMAIL_SERVER=
+      - MYSQL_SEVER=
+      - MYSQL_PORT=
+      - MYSQL_USERNAME=
+      - MYSQL_PASSWORD=
+      - MYSQL_DATABASE=
+      - PAYPAL_CLIENT_ID=
+      - PAYPAL_SECRET=
