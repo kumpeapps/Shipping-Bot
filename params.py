@@ -2,17 +2,11 @@
 
 import setup  # pylint: disable=unused-import, wrong-import-order
 import os
-from dotenv import load_dotenv
-from infisical_api import infisical_api
 
 
-load_dotenv()
+
 service_token = os.getenv("SERVICE_TOKEN")
-app_env = os.getenv("APP_ENV")
-creds = infisical_api(
-    service_token=service_token, infisical_url="https://creds.kumpeapps.com"
-)
-
+app_env = os.getenv("APP_ENV", "prod")
 
 class Params:
     """Shipping Bot Parameters"""
@@ -20,19 +14,11 @@ class Params:
     class SQL:
         """SQL Parameters for Shipping Bot"""
 
-        username = creds.get_secret(  # pylint: disable=no-member
-            "USERNAME", environment=app_env, path="/MYSQL/"
-        ).secretValue
-        password = creds.get_secret(  # pylint: disable=no-member
-            "PASSWORD", environment=app_env, path="/MYSQL/"
-        ).secretValue
-        server = creds.get_secret(  # pylint: disable=no-member
-            "SERVER", environment=app_env, path="/MYSQL/"
-        ).secretValue
-        port = creds.get_secret(  # pylint: disable=no-member
-            "PORT", environment=app_env, path="/MYSQL/"
-        ).secretValue
-        database = "BOT_Data"
+        username = os.getenv("MYSQL_USERNAME")
+        password = os.getenv("MYSQL_PASSWORD")
+        server = os.getenv("MYSQL_SERVER")
+        port = os.getenv("MYSQL_PORT")
+        database = os.getenv("MYSQL_DATABASE")
 
         def dict():  # pylint: disable=no-method-argument
             """returns as dictionary"""
@@ -47,22 +33,12 @@ class Params:
     class Email:
         """Email Parameters"""
 
-        server = creds.get_secret(  # pylint: disable=no-member
-            "SERVER", environment=app_env, path="/EMAIL/"
-        ).secretValue
-        email = creds.get_secret(  # pylint: disable=no-member
-            "EMAIL", environment=app_env, path="/EMAIL/"
-        ).secretValue
+        server = os.getenv("EMAIL_SERVER")
+        email = os.getenv("EMAIL")
         username = email
-        from_email = creds.get_secret(  # pylint: disable=no-member
-            "FROM_EMAIL", environment=app_env, path="/EMAIL/"
-        ).secretValue
-        password = creds.get_secret(  # pylint: disable=no-member
-            "PASSWORD", environment=app_env, path="/EMAIL/"
-        ).secretValue
-        port = creds.get_secret(  # pylint: disable=no-member
-            "PORT", environment=app_env, path="/EMAIL/"
-        ).secretValue
+        from_email = os.getenv("FROM_EMAIL")
+        password = os.getenv("EMAIL_PASSWORD")
+        port = os.getenv("EMAIL_PORT")
 
         def dict():  # pylint: disable=no-method-argument
             """returns as dictionary"""
@@ -78,12 +54,8 @@ class Params:
     class PayPal:
         """PayPal Parameters"""
 
-        client_id = creds.get_secret(  # pylint: disable=no-member
-            "CLIENT_ID", environment=app_env, path="/PAYPAL/"
-        ).secretValue
-        secret = creds.get_secret(  # pylint: disable=no-member
-            "SECRET", environment=app_env, path="/PAYPAL/"
-        ).secretValue
+        client_id = os.getenv("PAYPAL_CLIENT_ID")
+        secret = os.getenv("PAYPAL_SECRET")
 
 
 if __name__ == "__main__":
