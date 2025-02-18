@@ -20,5 +20,5 @@ jobs:
       - name: Build and Deploy Image
         run: |
             docker buildx build --push \
-                --tag kumpeapps-bot/shipping_bot:latest-beta \
+                --tag harbor.vm.kumpeapps.com/kumpeapps-bot/shipping_bot:latest-beta \
                 --platform linux/amd64,linux/arm/v7,linux/arm64 .
