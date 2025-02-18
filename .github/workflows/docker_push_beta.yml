@@ -9,7 +9,7 @@ on:
     branches: PreProd
 
 jobs:
-  deploymnet:
+  deployment:
     environment: beta
     env:
       DOCKER_CLIENT_TIMEOUT: 300
