@@ -1,5 +1,9 @@
 name: Push Docker Image to Docker Hub (Release)
 
+concurrency:
+  group: "docker-push-release"
+  cancel-in-progress: true
+
 on:
   release:
     types: [published]
