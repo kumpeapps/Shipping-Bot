@@ -1,11 +1,15 @@
 name: Push Docker Image to Docker Hub (Latest)
 
+concurrency:
+  group: "docker-push-latest"
+  cancel-in-progress: true
 on:
   push:
     branches: master
 
 jobs:
-  deploy:
+  deploymnet:
+    environment: production
     env:
       DOCKER_CLIENT_TIMEOUT: 300
       COMPOSE_HTTP_TIMEOUT: 300

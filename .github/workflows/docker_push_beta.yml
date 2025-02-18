@@ -1,11 +1,16 @@
 name: Push Docker Image to Docker Hub (Beta)
 
+concurrency:
+  group: "docker-push-beta"
+  cancel-in-progress: true
+
 on:
   push:
     branches: PreProd
 
 jobs:
-  deploy:
+  deploymnet:
+    environment: beta
     env:
       DOCKER_CLIENT_TIMEOUT: 300
       COMPOSE_HTTP_TIMEOUT: 300
