@@ -1,0 +1,1 @@
+0 * * * * /app/get_emails.py
