@@ -11,6 +11,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN service cron start
 COPY . /app
 RUN chmod 0644 /etc/cron.d/my_cron
-RUN crontab /etc/cron.d/my_cron
+# RUN crontab /etc/cron.d/my_cron
 
 CMD [ "cron", "-f" ]
