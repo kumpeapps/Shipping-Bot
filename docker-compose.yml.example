@@ -1,6 +1,6 @@
 services:
   shipping_bot:
-    image: "harbor.vm.kumpeapps.com/kumpeapps-bot/shipping_bot:latest-beta"
+    image: "justinkumpe/shipping_bot:latest-beta"
     environment:
       - EMAIL=
       - FROM_EMAIL=
