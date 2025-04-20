@@ -23,9 +23,11 @@ def parse_data(message: dict) -> dict:
             message.subject == "[PitneyShip] Package Shipped"
             or message.subject == "A shipment from Angela Kumpe is on its way"
         ):
-            parsed_data = scrape_pitneyship(message.html)
-            parsed_data["status"] = "shipped"
-            parsed_data["flow_status"] = "processing"
+            # parsed_data = scrape_pitneyship(message.html)
+            # parsed_data["status"] = "shipped"
+            # parsed_data["flow_status"] = "processing"
+            parsed_data["status"] = "unknown"
+            parsed_data["flow_status"] = "rejected"
         elif (
             message.subject == "[PitneyShip] Package Delivered"
             or message.subject == "Shipment Delivered"
