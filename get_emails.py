@@ -339,4 +339,4 @@ if __name__ == "__main__":
     schedule.every().hour.do(fetch_emails)
     while True:
         schedule.run_pending()
-        time.sleep(1)
+        time.sleep(20) # Sleep for 20 seconds before checking again
