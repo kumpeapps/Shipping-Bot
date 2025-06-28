@@ -2,13 +2,14 @@
 
 import setup  # pylint: disable=unused-import, wrong-import-order
 from typing import Optional
+import time
 from imap_tools import MailBox, AND
+import schedule
 import requests
 from loguru import logger
 import mysql.connector
 import pymysql
 from params import Params
-from pitney_ship import scrape_pitneyship
 from pirate_ship import scrape_pirateship
 
 
@@ -335,4 +336,7 @@ def authenticate() -> dict:
 
 if __name__ == "__main__":
     logger.info("Initializing Shipping Bot")
-    fetch_emails()
+    schedule.every().hour.do(fetch_emails)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
