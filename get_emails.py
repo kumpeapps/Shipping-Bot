@@ -1,6 +1,8 @@
 """Fetch Emails from mech_shippingbot"""
 
 import setup  # pylint: disable=unused-import, wrong-import-order
+import sys
+import signal
 from typing import Optional
 import time
 from imap_tools import MailBox, AND
@@ -11,6 +13,8 @@ import mysql.connector
 import pymysql
 from params import Params
 from pirate_ship import scrape_pirateship
+
+shutdown = False
 
 
 def parse_data(message: dict) -> dict:
@@ -334,9 +338,19 @@ def authenticate() -> dict:
     return response.json()
 
 
+def handle_shutdown(signum, _):
+    """Handle graceful shutdown on signal"""
+    global shutdown # pylint: disable=global-statement
+    logger.info(f"Received signal {signum}, shutting down gracefully...")
+    shutdown = True
+
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, handle_shutdown)
+    signal.signal(signal.SIGTERM, handle_shutdown)
     logger.info("Initializing Shipping Bot")
     schedule.every().hour.do(fetch_emails)
-    while True:
+    while not shutdown:
         schedule.run_pending()
-        time.sleep(20) # Sleep for 20 seconds before checking again
+        time.sleep(20)  # Sleep for 20 seconds before checking again
+    logger.info("Shipping Bot stopped.")
