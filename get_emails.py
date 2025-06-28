@@ -352,5 +352,7 @@ if __name__ == "__main__":
     schedule.every().hour.do(fetch_emails)
     while not shutdown:
         schedule.run_pending()
-        time.sleep(20)  # Sleep for 20 seconds before checking again
+        idle = schedule.idle_seconds()
+        # Sleep for the lesser of idle time or 1 second for responsive shutdown
+        time.sleep(min(idle if idle is not None else 1, 1))
     logger.info("Shipping Bot stopped.")
