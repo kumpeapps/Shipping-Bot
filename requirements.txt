@@ -9,4 +9,4 @@ PyMySQL==1.1.1
 requests==2.32.4
 soupsieve==2.6
 typing_extensions==4.12.2
-urllib3==2.3.0
+urllib3==2.5.0
